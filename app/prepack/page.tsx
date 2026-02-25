@@ -65,17 +65,9 @@ type FormState = {
 type FieldKey = keyof FormState;
 
 function normalizeBaseUrl(url: string): string {
-  const trimmed = url.trim();
-
-  const hasScheme = trimmed.startsWith("http://") || trimmed.startsWith("https://");
-  const withScheme = hasScheme
-    ? trimmed
-    : trimmed.includes("localhost") || trimmed.includes("127.0.0.1")
-      ? `http://${trimmed}`
-      : `https://${trimmed}`;
-
-  return withScheme.endsWith("/") ? withScheme.slice(0, -1) : withScheme;
+  return url.endsWith("/") ? url.slice(0, -1) : url;
 }
+
 function splitMustPoints(text: string): string[] {
   return text
     .split("\n")
