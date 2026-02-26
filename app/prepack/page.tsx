@@ -91,7 +91,7 @@ const subCard =
   "border rounded p-3 bg-[color:var(--surface-2)] border-[color:var(--border)]";
 const inputBase =
   "border rounded px-3 py-2 bg-[color:var(--surface-2)] border-[color:var(--border)] " +
-  "focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]";
+  "focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] w-full min-w-0";
 const btnPrimary =
   "rounded px-4 py-2 font-semibold bg-[color:var(--accent)] text-white " +
   "hover:bg-[color:var(--accent-2)] disabled:opacity-60";
@@ -298,7 +298,7 @@ export default function PrepackPage() {
               {errors.topic ? <span className="text-sm text-red-600">{errors.topic}</span> : null}
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="grid gap-1">
                 <span className="text-sm opacity-80">Tujuan</span>
                 <select
@@ -326,7 +326,7 @@ export default function PrepackPage() {
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="grid gap-1">
                 <span className="text-sm opacity-80">Audiens</span>
                 <input
@@ -374,7 +374,7 @@ export default function PrepackPage() {
               ) : null}
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="grid gap-1">
                 <span className="text-sm opacity-80">Sapaan</span>
                 <input
