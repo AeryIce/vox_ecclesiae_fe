@@ -99,8 +99,25 @@ const btnGhost =
   "border rounded px-3 py-2 text-sm bg-[color:var(--surface-2)] border-[color:var(--border)] " +
   "hover:bg-[color:var(--surface)]";
 
+const tabBtnBase =
+  "flex-1 rounded-lg px-3 py-2 text-sm font-semibold border transition " +
+  "border-[color:var(--border)]";
+const tabBtnActive = `${tabBtnBase} bg-[color:var(--accent)] text-white border-transparent`;
+const tabBtnInactive = `${tabBtnBase} bg-[color:var(--surface-2)] hover:bg-[color:var(--surface)]`;
+
+const stickyBar =
+  "md:hidden fixed bottom-0 left-0 right-0 p-3 " +
+  "bg-[color:var(--surface)]/95 backdrop-blur border-t border-[color:var(--border)]";
+
+const toast =
+  "md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 " +
+  "px-3 py-2 rounded-lg text-sm shadow-sm border " +
+  "bg-[color:var(--surface)] border-[color:var(--border)]";
+
 export default function PrepackPage() {
   const baseUrlRaw = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
 
   const [form, setForm] = useState<FormState>({
     topic: "",
@@ -210,6 +227,8 @@ export default function PrepackPage() {
       }
 
       setResult(data);
+      setActiveTab("output");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setApiError(msg);
@@ -233,7 +252,7 @@ export default function PrepackPage() {
   };
 
   return (
-    <main className="p-6 max-w-5xl mx-auto min-h-screen">
+    <main className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24 md:pb-6">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Vox Ecclesiae — PRE Pack Generator</h1>
         <p className="opacity-80 mt-1">
@@ -241,9 +260,30 @@ export default function PrepackPage() {
         </p>
       </header>
 
+      {/* Mobile Tabs */}
+      <div className="md:hidden mb-4 flex gap-2">
+        <button
+          type="button"
+          className={activeTab === "input" ? tabBtnActive : tabBtnInactive}
+          onClick={() => setActiveTab("input")}
+        >
+          Input
+        </button>
+        <button
+          type="button"
+          className={activeTab === "output" ? tabBtnActive : tabBtnInactive}
+          onClick={() => setActiveTab("output")}
+        >
+          Output
+        </button>
+      </div>
+
+      {/* Mobile copy toast */}
+      {copyMsg ? <div className={toast}>{copyMsg}</div> : null}
+
       <section className="grid gap-6 md:grid-cols-2">
         {/* FORM */}
-        <div className={card}>
+        <div className={`${card} ${activeTab === "input" ? "" : "hidden md:block"}`}>
           <h2 className="text-lg font-semibold">Input</h2>
 
           <div className="mt-4 grid gap-3">
@@ -370,7 +410,13 @@ export default function PrepackPage() {
               />
             </label>
 
-            <button type="button" className={btnPrimary} onClick={onSubmit} disabled={loading}>
+            {/* Desktop button (mobile uses sticky bar) */}
+            <button
+              type="button"
+              className={`${btnPrimary} hidden md:inline-flex justify-center`}
+              onClick={onSubmit}
+              disabled={loading}
+            >
               {loading ? "Generating..." : "Generate PRE Pack"}
             </button>
 
@@ -381,19 +427,21 @@ export default function PrepackPage() {
               </div>
             ) : null}
 
-            {copyMsg ? <div className="text-sm opacity-80">{copyMsg}</div> : null}
+            {/* Desktop copy message */}
+            {copyMsg ? <div className="hidden md:block text-sm opacity-80">{copyMsg}</div> : null}
           </div>
         </div>
 
         {/* RESULT */}
-        <div className={card}>
+        <div className={`${card} ${activeTab === "output" ? "" : "hidden md:block"}`}>
           <h2 className="text-lg font-semibold">Output</h2>
 
           {!result ? (
             <p className="opacity-70 mt-4">Belum ada hasil. Isi form lalu generate 😄</p>
           ) : (
             <div className="mt-4 grid gap-4">
-              <div className="flex gap-2 flex-wrap">
+              {/* Desktop copy buttons (mobile uses sticky bar) */}
+              <div className="hidden md:flex gap-2 flex-wrap">
                 <button type="button" className={btnGhost} onClick={onCopyMarkdown}>
                   Copy Markdown
                 </button>
@@ -402,85 +450,184 @@ export default function PrepackPage() {
                 </button>
               </div>
               {result?.ai ? (
-              <div className="border rounded p-3 bg-[color:var(--surface-2)] border-[color:var(--border)] text-sm">
-                <div className="font-semibold">Engine</div>
-                <div>version: <code>{result.version}</code></div>
-                <div>ai.used: <code>{String(result.ai.used)}</code></div>
-                {result.ai.model ? <div>model: <code>{result.ai.model}</code></div> : null}
-                {result.ai.error ? (
-                  <div className="mt-2">
-                    <div className="font-semibold text-red-600">ai.error</div>
-                    <pre className="whitespace-pre-wrap">{result.ai.error}</pre>
+                <div className="border rounded p-3 bg-[color:var(--surface-2)] border-[color:var(--border)] text-sm">
+                  <div className="font-semibold">Engine</div>
+                  <div>
+                    version: <code>{result.version}</code>
                   </div>
-                ) : null}
-              </div>
-            ) : null}
+                  <div>
+                    ai.used: <code>{String(result.ai.used)}</code>
+                  </div>
+                  {result.ai.model ? (
+                    <div>
+                      model: <code>{result.ai.model}</code>
+                    </div>
+                  ) : null}
+                  {result.ai.error ? (
+                    <div className="mt-2">
+                      <div className="font-semibold text-red-600">ai.error</div>
+                      <pre className="whitespace-pre-wrap">{result.ai.error}</pre>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Judul kerja</div>
-                <div className="font-semibold mt-1">{result.prepack.working_title}</div>
+              {/* Mobile: collapsible sections */}
+              <div className="md:hidden grid gap-3">
+                <details className={subCard} open>
+                  <summary className="font-semibold cursor-pointer">Judul kerja</summary>
+                  <div className="mt-2">{result.prepack.working_title}</div>
+                </details>
+
+                <details className={subCard} open>
+                  <summary className="font-semibold cursor-pointer">Opening hook</summary>
+                  <p className="mt-2 whitespace-pre-wrap">{result.prepack.opening_hook}</p>
+                </details>
+
+                <details className={subCard}>
+                  <summary className="font-semibold cursor-pointer">Rundown</summary>
+                  <ul className="mt-2 list-disc pl-5 grid gap-1">
+                    {result.prepack.rundown.map((s) => (
+                      <li key={`${s.segment}-${s.minutes}`}>
+                        <span className="font-semibold">{s.segment}</span>{" "}
+                        <span className="opacity-80">({s.minutes}m)</span> — {s.goal}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+
+                <details className={subCard}>
+                  <summary className="font-semibold cursor-pointer">Pertanyaan</summary>
+                  <ol className="mt-2 list-decimal pl-5 grid gap-3">
+                    {result.prepack.questions.map((qItem) => (
+                      <li key={qItem.q}>
+                        <div className="font-semibold">{qItem.q}</div>
+                        <ul className="mt-1 list-disc pl-5 opacity-90 grid gap-1">
+                          {qItem.followups.map((f) => (
+                            <li key={f}>{f}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+
+                <details className={subCard}>
+                  <summary className="font-semibold cursor-pointer">Moment targets</summary>
+                  <ul className="mt-2 list-disc pl-5 grid gap-1">
+                    {result.prepack.moment_targets.map((m) => (
+                      <li key={`${m.label}-${m.where}`}>
+                        <span className="font-semibold">{m.label}</span>{" "}
+                        <span className="opacity-80">({m.where})</span> — {m.why}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+
+                <details className={subCard}>
+                  <summary className="font-semibold cursor-pointer">Closing CTA</summary>
+                  <p className="mt-2 whitespace-pre-wrap">{result.prepack.closing_cta}</p>
+                </details>
+
+                <details className={subCard}>
+                  <summary className="font-semibold cursor-pointer">Markdown (siap copy-paste)</summary>
+                  <pre className="mt-2 whitespace-pre-wrap max-h-[55vh] overflow-auto text-sm">
+                    {result.markdown}
+                  </pre>
+                </details>
               </div>
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Opening hook</div>
-                <p className="mt-1 whitespace-pre-wrap">{result.prepack.opening_hook}</p>
-              </div>
+              {/* Desktop: expanded sections */}
+              <div className="hidden md:grid gap-4">
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Judul kerja</div>
+                  <div className="font-semibold mt-1">{result.prepack.working_title}</div>
+                </div>
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Rundown</div>
-                <ul className="mt-2 list-disc pl-5 grid gap-1">
-                  {result.prepack.rundown.map((s) => (
-                    <li key={`${s.segment}-${s.minutes}`}>
-                      <span className="font-semibold">{s.segment}</span>{" "}
-                      <span className="opacity-80">({s.minutes}m)</span> — {s.goal}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Opening hook</div>
+                  <p className="mt-1 whitespace-pre-wrap">{result.prepack.opening_hook}</p>
+                </div>
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Pertanyaan</div>
-                <ol className="mt-2 list-decimal pl-5 grid gap-3">
-                  {result.prepack.questions.map((qItem) => (
-                    <li key={qItem.q}>
-                      <div className="font-semibold">{qItem.q}</div>
-                      <ul className="mt-1 list-disc pl-5 opacity-90 grid gap-1">
-                        {qItem.followups.map((f) => (
-                          <li key={f}>{f}</li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ol>
-              </div>
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Rundown</div>
+                  <ul className="mt-2 list-disc pl-5 grid gap-1">
+                    {result.prepack.rundown.map((s) => (
+                      <li key={`${s.segment}-${s.minutes}`}>
+                        <span className="font-semibold">{s.segment}</span>{" "}
+                        <span className="opacity-80">({s.minutes}m)</span> — {s.goal}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Moment targets</div>
-                <ul className="mt-2 list-disc pl-5 grid gap-1">
-                  {result.prepack.moment_targets.map((m) => (
-                    <li key={`${m.label}-${m.where}`}>
-                      <span className="font-semibold">{m.label}</span>{" "}
-                      <span className="opacity-80">({m.where})</span> — {m.why}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Pertanyaan</div>
+                  <ol className="mt-2 list-decimal pl-5 grid gap-3">
+                    {result.prepack.questions.map((qItem) => (
+                      <li key={qItem.q}>
+                        <div className="font-semibold">{qItem.q}</div>
+                        <ul className="mt-1 list-disc pl-5 opacity-90 grid gap-1">
+                          {qItem.followups.map((f) => (
+                            <li key={f}>{f}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Closing CTA</div>
-                <p className="mt-1 whitespace-pre-wrap">{result.prepack.closing_cta}</p>
-              </div>
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Moment targets</div>
+                  <ul className="mt-2 list-disc pl-5 grid gap-1">
+                    {result.prepack.moment_targets.map((m) => (
+                      <li key={`${m.label}-${m.where}`}>
+                        <span className="font-semibold">{m.label}</span>{" "}
+                        <span className="opacity-80">({m.where})</span> — {m.why}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-              <div className={subCard}>
-                <div className="text-sm opacity-80">Markdown (siap copy-paste)</div>
-                <pre className="mt-2 whitespace-pre-wrap overflow-x-auto text-sm">
-                  {result.markdown}
-                </pre>
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Closing CTA</div>
+                  <p className="mt-1 whitespace-pre-wrap">{result.prepack.closing_cta}</p>
+                </div>
+
+                <div className={subCard}>
+                  <div className="text-sm opacity-80">Markdown (siap copy-paste)</div>
+                  <pre className="mt-2 whitespace-pre-wrap overflow-x-auto text-sm">
+                    {result.markdown}
+                  </pre>
+                </div>
               </div>
             </div>
           )}
         </div>
       </section>
+
+      {/* Sticky action bar (mobile) */}
+      <div className={stickyBar}>
+        {activeTab === "input" ? (
+          <button
+            type="button"
+            className={`${btnPrimary} w-full py-3`}
+            onClick={onSubmit}
+            disabled={loading}
+          >
+            {loading ? "Generating..." : "Generate PRE Pack"}
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button type="button" className={`${btnGhost} flex-1 py-3`} onClick={onCopyMarkdown}>
+              Copy Markdown
+            </button>
+            <button type="button" className={`${btnGhost} flex-1 py-3`} onClick={onCopyJson}>
+              Copy JSON
+            </button>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
